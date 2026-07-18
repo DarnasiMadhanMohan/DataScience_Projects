@@ -80,8 +80,18 @@ def load_and_train():
 
 # ----------------------------- UI -----------------------------
 st.title("📮 Consumer Complaint Resolution")
-st.caption("Enter the details of a consumer complaint and get a live prediction of "
-           "whether the consumer is likely to dispute the company's response.")
+st.caption("A machine-learning demo that predicts whether a consumer will dispute a company's response to their complaint.")
+
+st.info(
+    "**How to use this demo**\n\n"
+    "1. Choose the details of a complaint in the dropdowns below — the **product**, the "
+    "**issue**, how it was **submitted**, how the **company responded**, whether the response "
+    "was **timely**, and the consumer's **state**.\n"
+    "2. Click the **Predict** button at the bottom.\n"
+    "3. The model instantly estimates whether that consumer is **likely to dispute** the "
+    "response or **accept** it, with a probability score.\n\n"
+    "All dropdown options come from the real complaints dataset the model was trained on."
+)
 
 try:
     model, meta = load_and_train()
@@ -100,9 +110,20 @@ nice = {
     "state": "State",
 }
 
+helps = {
+    "product": "The financial product the complaint is about.",
+    "sub_product": "A more specific type under the chosen product.",
+    "issue": "What the complaint is about.",
+    "submitted_via": "How the complaint reached the company (Web, Phone, Email…).",
+    "company_response_to_consumer": "How the company responded to the complaint.",
+    "timely_response?": "Whether the company responded within the required time.",
+    "state": "The consumer's US state.",
+}
+
+st.subheader("Complaint details")
 choice = {}
 for c in meta["features"]:
-    choice[c] = st.selectbox(nice.get(c, c), meta["options"][c])
+    choice[c] = st.selectbox(nice.get(c, c), meta["options"][c], help=helps.get(c))
 
 st.divider()
 if st.button("Predict", type="primary", use_container_width=True):
