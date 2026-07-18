@@ -82,19 +82,69 @@ def load_and_train():
 
 
 # ----------------------------- UI -----------------------------
-st.title("📮 Consumer Complaint Resolution")
-st.caption("A machine-learning demo that predicts whether a consumer will dispute a company's response to their complaint.")
+st.markdown("""
+<style>
+.stApp{
+  background:
+    radial-gradient(1100px 500px at 8% -8%, rgba(79,70,229,.28), transparent 60%),
+    radial-gradient(900px 480px at 100% 0%, rgba(124,58,237,.20), transparent 55%),
+    #0b1020;
+}
+.block-container{padding-top:2.2rem;max-width:840px;}
+/* hero */
+.cc-hero{
+  background:linear-gradient(120deg,#4f46e5 0%,#7c3aed 55%,#9333ea 100%);
+  border-radius:20px;padding:34px 36px;color:#fff;margin-bottom:22px;
+  box-shadow:0 22px 50px rgba(79,70,229,.38);
+}
+.cc-badge{display:inline-block;background:rgba(255,255,255,.18);padding:6px 14px;
+  border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:1px;margin-bottom:14px;}
+.cc-hero h1{margin:0;font-size:2.05rem;font-weight:800;letter-spacing:.3px;}
+.cc-hero p{margin:.55rem 0 0;opacity:.93;font-size:1.03rem;max-width:600px;}
+/* steps card */
+.cc-steps{background:rgba(255,255,255,.045);border:1px solid rgba(124,58,237,.4);
+  border-radius:14px;padding:16px 20px;margin-bottom:6px;color:#c9d0e6;line-height:1.6;}
+.cc-steps b{color:#c4b5fd;}
+/* section heading */
+.cc-h{font-size:1.15rem;font-weight:700;color:#e7e9f7;margin:18px 0 2px;}
+/* labels */
+label p{font-weight:600 !important;color:#e5e7f5 !important;}
+/* predict button */
+.stButton>button{
+  background:linear-gradient(120deg,#4f46e5,#7c3aed);color:#fff;border:0;border-radius:12px;
+  padding:.75rem 1rem;font-weight:700;font-size:1.04rem;box-shadow:0 12px 28px rgba(79,70,229,.42);
+  transition:transform .15s,filter .15s;
+}
+.stButton>button:hover{filter:brightness(1.08);transform:translateY(-1px);}
+/* result cards */
+.cc-result{border-radius:16px;padding:22px 26px;margin-top:8px;}
+.cc-result .lbl{font-size:1.1rem;font-weight:700;}
+.cc-result .prob{font-size:2.6rem;font-weight:800;margin:4px 0 0;}
+.cc-result .sub{opacity:.8;font-size:.9rem;}
+.cc-accept{background:linear-gradient(120deg,rgba(16,185,129,.20),rgba(16,185,129,.05));
+  border:1px solid rgba(16,185,129,.55);color:#a7f3d0;}
+.cc-dispute{background:linear-gradient(120deg,rgba(239,68,68,.20),rgba(239,68,68,.05));
+  border:1px solid rgba(239,68,68,.55);color:#fecaca;}
+.cc-foot{color:#8b93ad;font-size:.83rem;margin-top:28px;text-align:center;}
+</style>
+""", unsafe_allow_html=True)
 
-st.info(
-    "**How to use this demo**\n\n"
-    "1. Choose the details of a complaint in the dropdowns below — the **product**, the "
-    "**issue**, how it was **submitted**, how the **company responded**, whether the response "
-    "was **timely**, and the consumer's **state**.\n"
-    "2. Click the **Predict** button at the bottom.\n"
-    "3. The model instantly estimates whether that consumer is **likely to dispute** the "
-    "response or **accept** it, with a probability score.\n\n"
-    "All dropdown options come from the real complaints dataset the model was trained on."
-)
+st.markdown("""
+<div class="cc-hero">
+  <span class="cc-badge">⚖️ &nbsp;MACHINE LEARNING · NLP DEMO</span>
+  <h1>Consumer Complaint Resolution</h1>
+  <p>Enter a complaint's details and the model predicts whether the consumer is
+     likely to <b>dispute</b> the company's response — or accept it.</p>
+</div>
+""", unsafe_allow_html=True)
+
+st.markdown("""
+<div class="cc-steps">
+<b>How it works:</b> pick a <b>Product</b> and the Sub-product &amp; Issue lists auto-filter to match it.
+Set how it was submitted, the company's response and timeliness, then choose the consumer's
+<b>state</b> and press <b>Predict</b>. All options come from the real complaints dataset.
+</div>
+""", unsafe_allow_html=True)
 
 try:
     model, meta = load_and_train()
@@ -123,7 +173,7 @@ helps = {
     "state": "The consumer's US state.",
 }
 
-st.subheader("Complaint details")
+st.markdown('<div class="cc-h">📝 Complaint details</div>', unsafe_allow_html=True)
 
 # Fields that cascade (each narrows the next). "state" stays a free manual choice.
 CASCADE = ["product", "sub_product", "issue", "submitted_via",
@@ -143,11 +193,11 @@ for c in CASCADE:
 
 # State: independent, chosen manually just before predicting
 if "state" in meta["features"]:
-    st.markdown("**Finally, choose the consumer's state:**")
+    st.markdown('<div class="cc-h">📍 Finally, choose the consumer\'s state</div>', unsafe_allow_html=True)
     choice["state"] = st.selectbox(nice["state"], meta["options"]["state"], help=helps.get("state"))
 
-st.divider()
-if st.button("Predict", type="primary", use_container_width=True):
+st.write("")
+if st.button("🔮  Predict dispute likelihood", use_container_width=True):
     row = {}
     for c in meta["features"]:
         le = meta["encoders"][c]
@@ -158,13 +208,23 @@ if st.button("Predict", type="primary", use_container_width=True):
     X_one = pd.DataFrame([[row[c] for c in meta["features"]]], columns=meta["features"])
     proba = float(model.predict_proba(X_one)[0][1])
 
-    st.subheader("Result")
     if proba >= 0.5:
-        st.error(f"⚠️  Consumer likely to **DISPUTE** — probability **{proba:.0%}**")
+        st.markdown(f"""
+        <div class="cc-result cc-dispute">
+          <div class="lbl">⚠️ Consumer likely to DISPUTE the response</div>
+          <div class="prob">{proba:.0%}</div>
+          <div class="sub">estimated probability of a dispute</div>
+        </div>""", unsafe_allow_html=True)
     else:
-        st.success(f"✅  Consumer likely to **ACCEPT** the response — dispute probability **{proba:.0%}**")
+        st.markdown(f"""
+        <div class="cc-result cc-accept">
+          <div class="lbl">✅ Consumer likely to ACCEPT the response</div>
+          <div class="prob">{proba:.0%}</div>
+          <div class="sub">estimated probability of a dispute</div>
+        </div>""", unsafe_allow_html=True)
     st.progress(proba)
-    st.caption("Model: RandomForest trained on the project's complaints dataset. Demo only.")
 
-st.divider()
-st.caption("Built by Madhan Mohan Darnasi · Source: DataScience_Projects/Consumer_Complaint_resolution")
+st.markdown(
+    '<div class="cc-foot">Built by <b>Madhan Mohan Darnasi</b> · RandomForest model · '
+    'Source: DataScience_Projects/Consumer_Complaint_resolution</div>',
+    unsafe_allow_html=True)
