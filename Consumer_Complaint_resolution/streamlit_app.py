@@ -63,10 +63,12 @@ def load_and_train():
     features = [c for c in FEATURE_CANDIDATES if c in df.columns]
     encoders, options = {}, {}
     X = pd.DataFrame(index=df.index)
+    disp = pd.DataFrame(index=df.index)  # collapsed string values, for cascading dropdowns
     for c in features:
         vals = df[c].astype(str).fillna("Unknown")
         top = vals.value_counts().head(TOP_CATEGORIES).index.tolist()
         vals = vals.where(vals.isin(top), "Other")
+        disp[c] = vals
         le = LabelEncoder()
         X[c] = le.fit_transform(vals)
         encoders[c] = le
@@ -75,7 +77,8 @@ def load_and_train():
     model = RandomForestClassifier(n_estimators=200, max_depth=14, n_jobs=-1, random_state=42)
     model.fit(X, y)
 
-    return model, {"features": features, "encoders": encoders, "options": options}
+    return model, {"features": features, "encoders": encoders, "options": options,
+                   "disp": disp.reset_index(drop=True)}
 
 
 # ----------------------------- UI -----------------------------
@@ -121,9 +124,27 @@ helps = {
 }
 
 st.subheader("Complaint details")
+
+# Fields that cascade (each narrows the next). "state" stays a free manual choice.
+CASCADE = ["product", "sub_product", "issue", "submitted_via",
+           "company_response_to_consumer", "timely_response?"]
+
+disp = meta["disp"]
+filt = disp
 choice = {}
-for c in meta["features"]:
-    choice[c] = st.selectbox(nice.get(c, c), meta["options"][c], help=helps.get(c))
+for c in CASCADE:
+    if c not in meta["features"]:
+        continue
+    opts = sorted(filt[c].dropna().unique().tolist())
+    if not opts:                       # safety: never show an empty dropdown
+        opts = meta["options"][c]
+    choice[c] = st.selectbox(nice.get(c, c), opts, help=helps.get(c))
+    filt = filt[filt[c] == choice[c]]  # narrow options for the following fields
+
+# State: independent, chosen manually just before predicting
+if "state" in meta["features"]:
+    st.markdown("**Finally, choose the consumer's state:**")
+    choice["state"] = st.selectbox(nice["state"], meta["options"]["state"], help=helps.get("state"))
 
 st.divider()
 if st.button("Predict", type="primary", use_container_width=True):
