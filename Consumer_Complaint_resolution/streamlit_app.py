@@ -77,8 +77,12 @@ def load_and_train():
     model = RandomForestClassifier(n_estimators=200, max_depth=14, n_jobs=-1, random_state=42)
     model.fit(X, y)
 
+    importances = dict(zip(features, model.feature_importances_.tolist()))
+    base_rate = float(y.mean())  # overall share of disputed complaints
+
     return model, {"features": features, "encoders": encoders, "options": options,
-                   "disp": disp.reset_index(drop=True)}
+                   "disp": disp.reset_index(drop=True),
+                   "importances": importances, "base_rate": base_rate}
 
 
 # ============================== UI / UX ==============================
@@ -188,6 +192,21 @@ div[data-baseweb="select"] > div{background:rgba(0,0,0,.25) !important;
   animation:grow 1.1s cubic-bezier(.2,.9,.3,1) both;}
 .meter-cap{display:flex;justify-content:space-between;color:var(--muted);
   font-size:.75rem;margin-top:6px;letter-spacing:.4px;}
+
+/* ---------- EXPLANATION ---------- */
+.cc-exp{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:16px;
+  padding:20px 22px;margin-top:16px;animation:fadeUp .6s ease both;}
+.cc-exp .eh{font-weight:700;color:var(--gold-soft);margin-bottom:4px;display:flex;align-items:center;gap:8px;}
+.cc-exp .lead{color:var(--muted);font-size:.92rem;line-height:1.55;margin-bottom:14px;}
+.cc-exp .lead b{color:#efe6d6;}
+.fac{margin-bottom:12px;}
+.fac .top{display:flex;justify-content:space-between;gap:10px;font-size:.86rem;margin-bottom:5px;}
+.fac .lab{color:#efe6d6;font-weight:600;}
+.fac .val{color:var(--muted);text-align:right;}
+.fac .track{height:9px;border-radius:6px;background:rgba(255,255,255,.06);overflow:hidden;}
+.fac .track i{display:block;height:100%;border-radius:6px;
+  background:linear-gradient(90deg,var(--gold),var(--red));animation:grow 1s ease both;}
+.cc-note{color:#8b8272;font-size:.78rem;margin-top:10px;line-height:1.5;}
 
 .cc-foot{color:#8b8272;font-size:.82rem;margin-top:30px;text-align:center;}
 .cc-foot b{color:var(--gold-soft);}
@@ -303,6 +322,37 @@ if st.button("🔮  Predict dispute likelihood"):
         <div class="meter"><i style="width:{proba*100:.0f}%"></i></div>
         <div class="meter-cap"><span>Will accept</span><span>Dispute risk</span></div>
         """, unsafe_allow_html=True)
+
+    # ---- plain-language explanation of the prediction ----
+    imp = meta.get("importances", {})
+    base = meta.get("base_rate", 0.0)
+    ordered = sorted(meta["features"], key=lambda c: imp.get(c, 0), reverse=True)[:5]
+    mx = max([imp.get(c, 0) for c in ordered] + [1e-9])
+    label_txt = {"product": "Product", "sub_product": "Sub-product", "issue": "Issue",
+                 "submitted_via": "Submitted via", "company_response_to_consumer": "Company response",
+                 "timely_response?": "Timely response?", "state": "State"}
+    rows_html = ""
+    for c in ordered:
+        w = imp.get(c, 0) / mx * 100
+        rows_html += (f'<div class="fac"><div class="top">'
+                      f'<span class="lab">{label_txt.get(c, c)}</span>'
+                      f'<span class="val">{choice.get(c, "")}</span></div>'
+                      f'<div class="track"><i style="width:{w:.0f}%"></i></div></div>')
+    verb = "dispute" if proba >= 0.5 else "accept"
+    vs_base = ("higher than" if proba > base + 0.02
+               else "lower than" if proba < base - 0.02 else "about the same as")
+    st.markdown(f"""
+    <div class="cc-exp">
+      <div class="eh">🧠 Why this prediction?</div>
+      <div class="lead">The model estimates a <b>{pct}</b> chance this consumer will <b>{verb.upper()}</b>
+        the company's response. Across the whole dataset roughly <b>{base:.0%}</b> of complaints end in a
+        dispute, so this case is <b>{vs_base}</b> average. The bars below show which fields the model relies
+        on most, next to the values you chose.</div>
+      {rows_html}
+      <div class="cc-note">These reflect the model's overall feature importance — how much each field shaped
+        what it learned — not a legal or financial judgement. This is a portfolio demo.</div>
+    </div>
+    """, unsafe_allow_html=True)
 
 st.markdown(
     '<div class="cc-foot">Built by <b>Madhan Mohan Darnasi</b> · RandomForest model · '
