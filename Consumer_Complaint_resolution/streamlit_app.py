@@ -18,7 +18,7 @@ import streamlit as st
 from sklearn.preprocessing import LabelEncoder
 from sklearn.ensemble import RandomForestClassifier
 
-st.set_page_config(page_title="Consumer Complaint Resolution", page_icon="📮", layout="centered")
+st.set_page_config(page_title="Consumer Complaint Resolution", page_icon="⚖️", layout="centered")
 
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 TRAIN_CANDIDATES = [
@@ -81,68 +81,142 @@ def load_and_train():
                    "disp": disp.reset_index(drop=True)}
 
 
-# ----------------------------- UI -----------------------------
+# ============================== UI / UX ==============================
 st.markdown("""
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;800&display=swap');
+
+:root{
+  --gold:#e8b84b; --gold-soft:#f6d98a; --red:#d23b3b; --red-deep:#8f1c20;
+  --bg:#0b0908; --ink:#efe9df; --muted:#a79d8e; --line:rgba(232,184,75,.18);
+}
+html, body, [class*="css"]{font-family:'Poppins',sans-serif;}
 .stApp{
   background:
-    radial-gradient(1100px 500px at 8% -8%, rgba(79,70,229,.28), transparent 60%),
-    radial-gradient(900px 480px at 100% 0%, rgba(124,58,237,.20), transparent 55%),
-    #0b1020;
+    radial-gradient(1100px 520px at 6% -10%, rgba(232,184,75,.16), transparent 60%),
+    radial-gradient(1000px 520px at 104% 4%, rgba(210,59,59,.18), transparent 55%),
+    #0b0908;
+  color:var(--ink);
 }
-.block-container{padding-top:2.2rem;max-width:840px;}
-/* hero */
+.block-container{padding-top:2rem;max-width:860px;}
+#MainMenu, footer, header[data-testid="stHeader"]{visibility:hidden;}
+
+/* ---------- HERO ---------- */
 .cc-hero{
-  background:linear-gradient(120deg,#4f46e5 0%,#7c3aed 55%,#9333ea 100%);
-  border-radius:20px;padding:34px 36px;color:#fff;margin-bottom:22px;
-  box-shadow:0 22px 50px rgba(79,70,229,.38);
+  position:relative;overflow:hidden;border-radius:22px;padding:36px 38px;margin-bottom:24px;
+  background:linear-gradient(160deg, rgba(232,184,75,.10), rgba(210,59,59,.08)), #100d0b;
+  border:1px solid rgba(232,184,75,.28);
+  box-shadow:0 26px 60px rgba(0,0,0,.5), inset 0 0 0 1px rgba(255,255,255,.02);
+  animation:fadeUp .7s ease both;
 }
-.cc-badge{display:inline-block;background:rgba(255,255,255,.18);padding:6px 14px;
-  border-radius:999px;font-size:.74rem;font-weight:700;letter-spacing:1px;margin-bottom:14px;}
-.cc-hero h1{margin:0;font-size:2.05rem;font-weight:800;letter-spacing:.3px;}
-.cc-hero p{margin:.55rem 0 0;opacity:.93;font-size:1.03rem;max-width:600px;}
-/* steps card */
-.cc-steps{background:rgba(255,255,255,.045);border:1px solid rgba(124,58,237,.4);
-  border-radius:14px;padding:16px 20px;margin-bottom:6px;color:#c9d0e6;line-height:1.6;}
-.cc-steps b{color:#c4b5fd;}
-/* section heading */
-.cc-h{font-size:1.15rem;font-weight:700;color:#e7e9f7;margin:18px 0 2px;}
-/* labels */
-label p{font-weight:600 !important;color:#e5e7f5 !important;}
-/* predict button */
+.cc-hero::after{
+  content:"";position:absolute;top:-60%;left:-20%;width:60%;height:220%;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.06),transparent);
+  transform:rotate(18deg);animation:shine 5.5s ease-in-out infinite;
+}
+.cc-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(232,184,75,.14);
+  color:var(--gold-soft);padding:6px 14px;border-radius:999px;font-size:.72rem;font-weight:600;
+  letter-spacing:1.5px;border:1px solid rgba(232,184,75,.3);margin-bottom:16px;}
+.cc-hero h1{
+  margin:0;font-size:2.3rem;font-weight:800;letter-spacing:.3px;line-height:1.1;
+  background:linear-gradient(92deg,var(--gold-soft),var(--gold) 40%,var(--red) 100%);
+  -webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;
+}
+.cc-hero p{margin:.7rem 0 0;color:var(--muted);font-size:1.04rem;max-width:600px;}
+.cc-hero p b{color:var(--gold-soft);}
+
+/* ---------- STEP CHIPS ---------- */
+.cc-steps{display:flex;gap:12px;flex-wrap:wrap;margin:2px 0 22px;animation:fadeUp .9s ease both;}
+.cc-chip{flex:1;min-width:210px;background:rgba(255,255,255,.03);border:1px solid var(--line);
+  border-radius:14px;padding:14px 16px;transition:.25s;}
+.cc-chip:hover{border-color:rgba(232,184,75,.5);transform:translateY(-3px);
+  box-shadow:0 14px 30px rgba(0,0,0,.4);}
+.cc-chip .n{display:inline-grid;place-items:center;width:26px;height:26px;border-radius:50%;
+  font-weight:800;font-size:.85rem;color:#160f06;background:linear-gradient(120deg,var(--gold),var(--red));
+  margin-bottom:8px;}
+.cc-chip b{color:var(--gold-soft);font-size:.95rem;}
+.cc-chip span{display:block;color:var(--muted);font-size:.85rem;margin-top:2px;line-height:1.45;}
+
+/* ---------- SECTION HEADING ---------- */
+.cc-h{font-size:1.15rem;font-weight:700;color:var(--ink);margin:20px 0 6px;
+  display:flex;align-items:center;gap:8px;}
+.cc-h::before{content:"";width:4px;height:20px;border-radius:3px;
+  background:linear-gradient(180deg,var(--gold),var(--red));}
+
+/* ---------- FIELDS ---------- */
+div[data-testid="stSelectbox"]{
+  background:rgba(255,255,255,.028);border:1px solid var(--line);border-radius:12px;
+  padding:8px 14px 10px;margin-bottom:10px;transition:.22s;
+}
+div[data-testid="stSelectbox"]:hover{border-color:rgba(232,184,75,.45);
+  box-shadow:0 8px 22px rgba(0,0,0,.32);}
+div[data-testid="stSelectbox"] label p{font-weight:600 !important;color:#efe6d6 !important;
+  letter-spacing:.2px;}
+div[data-baseweb="select"] > div{background:rgba(0,0,0,.25) !important;
+  border-color:rgba(232,184,75,.18) !important;border-radius:9px !important;}
+
+/* ---------- PREDICT BUTTON ---------- */
 .stButton>button{
-  background:linear-gradient(120deg,#4f46e5,#7c3aed);color:#fff;border:0;border-radius:12px;
-  padding:.75rem 1rem;font-weight:700;font-size:1.04rem;box-shadow:0 12px 28px rgba(79,70,229,.42);
-  transition:transform .15s,filter .15s;
+  width:100%;background:linear-gradient(120deg,var(--gold),var(--red));color:#160f06;
+  border:0;border-radius:14px;padding:.85rem 1rem;font-weight:800;font-size:1.08rem;
+  letter-spacing:.3px;box-shadow:0 14px 30px rgba(210,59,59,.35);
+  transition:transform .15s,filter .15s,box-shadow .15s;
 }
-.stButton>button:hover{filter:brightness(1.08);transform:translateY(-1px);}
-/* result cards */
-.cc-result{border-radius:16px;padding:22px 26px;margin-top:8px;}
-.cc-result .lbl{font-size:1.1rem;font-weight:700;}
-.cc-result .prob{font-size:2.6rem;font-weight:800;margin:4px 0 0;}
-.cc-result .sub{opacity:.8;font-size:.9rem;}
-.cc-accept{background:linear-gradient(120deg,rgba(16,185,129,.20),rgba(16,185,129,.05));
-  border:1px solid rgba(16,185,129,.55);color:#a7f3d0;}
-.cc-dispute{background:linear-gradient(120deg,rgba(239,68,68,.20),rgba(239,68,68,.05));
-  border:1px solid rgba(239,68,68,.55);color:#fecaca;}
-.cc-foot{color:#8b93ad;font-size:.83rem;margin-top:28px;text-align:center;}
+.stButton>button:hover{filter:brightness(1.07);transform:translateY(-2px);
+  box-shadow:0 18px 40px rgba(210,59,59,.5);}
+.stButton>button:active{transform:translateY(0);}
+
+/* ---------- RESULT ---------- */
+.verdict{display:flex;align-items:center;gap:18px;border-radius:18px;padding:22px 26px;margin-top:14px;
+  animation:pop .55s cubic-bezier(.2,.9,.3,1.3) both;}
+.verdict .ic{font-size:2.2rem;line-height:1;}
+.verdict .txt{flex:1;}
+.verdict .title{font-size:1.15rem;font-weight:700;}
+.verdict .sub{color:var(--muted);font-size:.86rem;margin-top:2px;}
+.verdict .pct{font-size:2.9rem;font-weight:800;line-height:1;}
+.v-dispute{background:linear-gradient(120deg,rgba(210,59,59,.22),rgba(143,28,32,.10));
+  border:1px solid rgba(210,59,59,.55);}
+.v-dispute .title,.v-dispute .pct{color:#ff9d9d;}
+.v-accept{background:linear-gradient(120deg,rgba(46,191,113,.20),rgba(232,184,75,.08));
+  border:1px solid rgba(46,191,113,.5);}
+.v-accept .title,.v-accept .pct{color:#8ef0b6;}
+
+.meter{height:14px;border-radius:10px;margin-top:14px;overflow:hidden;
+  background:rgba(255,255,255,.06);border:1px solid var(--line);}
+.meter > i{display:block;height:100%;border-radius:10px;
+  background:linear-gradient(90deg,#2fbf71,var(--gold) 55%,var(--red));
+  animation:grow 1.1s cubic-bezier(.2,.9,.3,1) both;}
+.meter-cap{display:flex;justify-content:space-between;color:var(--muted);
+  font-size:.75rem;margin-top:6px;letter-spacing:.4px;}
+
+.cc-foot{color:#8b8272;font-size:.82rem;margin-top:30px;text-align:center;}
+.cc-foot b{color:var(--gold-soft);}
+
+/* ---------- ANIMATIONS ---------- */
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+@keyframes pop{0%{opacity:0;transform:scale(.9);}100%{opacity:1;transform:scale(1);}}
+@keyframes grow{from{width:0;}}
+@keyframes shine{0%,60%{left:-30%;}100%{left:120%;}}
 </style>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="cc-hero">
-  <span class="cc-badge">⚖️ &nbsp;MACHINE LEARNING · NLP DEMO</span>
+  <span class="cc-badge">⚖️ MACHINE LEARNING · NLP</span>
   <h1>Consumer Complaint Resolution</h1>
-  <p>Enter a complaint's details and the model predicts whether the consumer is
+  <p>Enter a complaint's details and this model predicts whether the consumer is
      likely to <b>dispute</b> the company's response — or accept it.</p>
 </div>
 """, unsafe_allow_html=True)
 
 st.markdown("""
 <div class="cc-steps">
-<b>How it works:</b> pick a <b>Product</b> and the Sub-product &amp; Issue lists auto-filter to match it.
-Set how it was submitted, the company's response and timeliness, then choose the consumer's
-<b>state</b> and press <b>Predict</b>. All options come from the real complaints dataset.
+  <div class="cc-chip"><span class="n">1</span><b>Describe the complaint</b>
+    <span>Pick the product — sub-product &amp; issue auto-filter to match.</span></div>
+  <div class="cc-chip"><span class="n">2</span><b>Add the response</b>
+    <span>How it was submitted, the company's reply, timeliness &amp; state.</span></div>
+  <div class="cc-chip"><span class="n">3</span><b>Predict</b>
+    <span>Get an instant dispute-likelihood score from the model.</span></div>
 </div>
 """, unsafe_allow_html=True)
 
@@ -154,15 +228,14 @@ except FileNotFoundError:
     st.stop()
 
 nice = {
-    "product": "Product",
-    "sub_product": "Sub-product",
-    "issue": "Issue",
-    "submitted_via": "Submitted via",
-    "company_response_to_consumer": "Company response",
-    "timely_response?": "Timely response?",
-    "state": "State",
+    "product": "🏦 Product",
+    "sub_product": "📦 Sub-product",
+    "issue": "❗ Issue",
+    "submitted_via": "📨 Submitted via",
+    "company_response_to_consumer": "🏢 Company response",
+    "timely_response?": "⏱️ Timely response?",
+    "state": "📍 State",
 }
-
 helps = {
     "product": "The financial product the complaint is about.",
     "sub_product": "A more specific type under the chosen product.",
@@ -173,7 +246,7 @@ helps = {
     "state": "The consumer's US state.",
 }
 
-st.markdown('<div class="cc-h">📝 Complaint details</div>', unsafe_allow_html=True)
+st.markdown('<div class="cc-h">Complaint details</div>', unsafe_allow_html=True)
 
 # Fields that cascade (each narrows the next). "state" stays a free manual choice.
 CASCADE = ["product", "sub_product", "issue", "submitted_via",
@@ -186,18 +259,17 @@ for c in CASCADE:
     if c not in meta["features"]:
         continue
     opts = sorted(filt[c].dropna().unique().tolist())
-    if not opts:                       # safety: never show an empty dropdown
+    if not opts:
         opts = meta["options"][c]
     choice[c] = st.selectbox(nice.get(c, c), opts, help=helps.get(c))
-    filt = filt[filt[c] == choice[c]]  # narrow options for the following fields
+    filt = filt[filt[c] == choice[c]]
 
-# State: independent, chosen manually just before predicting
 if "state" in meta["features"]:
-    st.markdown('<div class="cc-h">📍 Finally, choose the consumer\'s state</div>', unsafe_allow_html=True)
+    st.markdown('<div class="cc-h">Finally, choose the consumer\'s state</div>', unsafe_allow_html=True)
     choice["state"] = st.selectbox(nice["state"], meta["options"]["state"], help=helps.get("state"))
 
 st.write("")
-if st.button("🔮  Predict dispute likelihood", use_container_width=True):
+if st.button("🔮  Predict dispute likelihood"):
     row = {}
     for c in meta["features"]:
         le = meta["encoders"][c]
@@ -207,24 +279,32 @@ if st.button("🔮  Predict dispute likelihood", use_container_width=True):
         row[c] = int(le.transform([val])[0])
     X_one = pd.DataFrame([[row[c] for c in meta["features"]]], columns=meta["features"])
     proba = float(model.predict_proba(X_one)[0][1])
+    pct = f"{proba:.0%}"
 
     if proba >= 0.5:
         st.markdown(f"""
-        <div class="cc-result cc-dispute">
-          <div class="lbl">⚠️ Consumer likely to DISPUTE the response</div>
-          <div class="prob">{proba:.0%}</div>
-          <div class="sub">estimated probability of a dispute</div>
-        </div>""", unsafe_allow_html=True)
+        <div class="verdict v-dispute">
+          <div class="ic">⚠️</div>
+          <div class="txt"><div class="title">Likely to DISPUTE the response</div>
+            <div class="sub">The consumer is predicted to challenge how the company handled it.</div></div>
+          <div class="pct">{pct}</div>
+        </div>
+        <div class="meter"><i style="width:{proba*100:.0f}%"></i></div>
+        <div class="meter-cap"><span>Will accept</span><span>Dispute risk</span></div>
+        """, unsafe_allow_html=True)
     else:
         st.markdown(f"""
-        <div class="cc-result cc-accept">
-          <div class="lbl">✅ Consumer likely to ACCEPT the response</div>
-          <div class="prob">{proba:.0%}</div>
-          <div class="sub">estimated probability of a dispute</div>
-        </div>""", unsafe_allow_html=True)
-    st.progress(proba)
+        <div class="verdict v-accept">
+          <div class="ic">✅</div>
+          <div class="txt"><div class="title">Likely to ACCEPT the response</div>
+            <div class="sub">The consumer is predicted to be satisfied with the outcome.</div></div>
+          <div class="pct">{pct}</div>
+        </div>
+        <div class="meter"><i style="width:{proba*100:.0f}%"></i></div>
+        <div class="meter-cap"><span>Will accept</span><span>Dispute risk</span></div>
+        """, unsafe_allow_html=True)
 
 st.markdown(
     '<div class="cc-foot">Built by <b>Madhan Mohan Darnasi</b> · RandomForest model · '
-    'Source: DataScience_Projects/Consumer_Complaint_resolution</div>',
+    'DataScience_Projects / Consumer_Complaint_resolution</div>',
     unsafe_allow_html=True)
